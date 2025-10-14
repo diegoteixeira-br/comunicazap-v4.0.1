@@ -74,16 +74,45 @@ const Results = () => {
     try {
       const processedMessage = customMessage ? replaceVariables(customMessage, client) : "";
       
+      // Validação da mensagem
+      if (!processedMessage.trim()) {
+        toast.error("Mensagem vazia", {
+          description: "Por favor, digite uma mensagem antes de enviar"
+        });
+        setSendingStatus(prev => ({ ...prev, [index]: "error" }));
+        return;
+      }
+
+      const payload = {
+        nome: client["Nome do Cliente"],
+        telefone: client["Telefone do Cliente"],
+        mensagem: processedMessage,
+      };
+
+      console.log("🚀 Enviando mensagem:", {
+        index: index + 1,
+        cliente: payload.nome,
+        telefone: payload.telefone,
+        mensagem: payload.mensagem,
+        timestamp: new Date().toISOString()
+      });
+      
       const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          nome: client["Nome do Cliente"],
-          telefone: client["Telefone do Cliente"],
-          mensagem: processedMessage,
-        }),
+        body: JSON.stringify(payload),
+      });
+
+      const responseData = await response.json().catch(() => null);
+      
+      console.log("📥 Resposta do servidor:", {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        data: responseData,
+        cliente: payload.nome
       });
 
       if (response.ok) {
@@ -91,14 +120,16 @@ const Results = () => {
         toast.success("Mensagem enviada!", {
           description: `Enviado para ${client["Nome do Cliente"]}`
         });
+        console.log("✅ Sucesso para:", payload.nome);
       } else {
-        throw new Error("Erro na resposta do servidor");
+        console.error("❌ Erro na resposta:", response.status, responseData);
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      console.error("Erro ao enviar:", error);
+      console.error("❌ Erro ao enviar:", error);
       setSendingStatus(prev => ({ ...prev, [index]: "error" }));
       toast.error("Erro ao enviar", {
-        description: "Não foi possível enviar a mensagem. Tente novamente."
+        description: `Não foi possível enviar para ${client["Nome do Cliente"]}`
       });
     }
   };
