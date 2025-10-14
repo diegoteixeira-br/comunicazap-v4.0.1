@@ -14,13 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      message_campaigns: {
+        Row: {
+          campaign_name: string | null
+          completed_at: string | null
+          created_at: string | null
+          failed_count: number | null
+          id: string
+          instance_id: string
+          sent_count: number | null
+          status: string | null
+          total_contacts: number | null
+          user_id: string
+        }
+        Insert: {
+          campaign_name?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          failed_count?: number | null
+          id?: string
+          instance_id: string
+          sent_count?: number | null
+          status?: string | null
+          total_contacts?: number | null
+          user_id: string
+        }
+        Update: {
+          campaign_name?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          failed_count?: number | null
+          id?: string
+          instance_id?: string
+          sent_count?: number | null
+          status?: string | null
+          total_contacts?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_campaigns_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_campaigns_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_logs: {
+        Row: {
+          campaign_id: string
+          client_name: string
+          client_phone: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message: string
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          campaign_id: string
+          client_name: string
+          client_phone: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          client_name?: string
+          client_phone?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_logs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "message_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_instances: {
+        Row: {
+          created_at: string | null
+          id: string
+          instance_id: string | null
+          instance_name: string
+          phone_number: string | null
+          qr_code: string | null
+          qr_code_updated_at: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          instance_id?: string | null
+          instance_name: string
+          phone_number?: string | null
+          qr_code?: string | null
+          qr_code_updated_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          instance_id?: string | null
+          instance_name?: string
+          phone_number?: string | null
+          qr_code?: string | null
+          qr_code_updated_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_instances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_failed_count: {
+        Args: { campaign_id: string }
+        Returns: undefined
+      }
+      increment_sent_count: {
+        Args: { campaign_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
