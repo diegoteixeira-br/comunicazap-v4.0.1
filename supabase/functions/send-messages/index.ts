@@ -99,14 +99,14 @@ serve(async (req) => {
 
         await new Promise(resolve => setTimeout(resolve, index * 3000));
 
-        const webhookUrl = `${n8nWebhookUrl}/${instance.instance_name}`;
-        const response = await fetch(webhookUrl, {
+        const response = await fetch(n8nWebhookUrl, {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json',
-            'apikey': instance.api_key || ''
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            instanceName: instance.instance_name,
+            api_key: instance.api_key,
             number: client["Telefone do Cliente"],
             text: message.replace('{nome}', client["Nome do Cliente"])
           })
