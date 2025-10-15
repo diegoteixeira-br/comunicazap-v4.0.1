@@ -84,13 +84,18 @@ serve(async (req) => {
       const ownerJid = 
         fullInstanceData?.instance?.owner ||
         fullInstanceData?.owner ||
+        fullInstanceData?.ownerJid ||
         statusData?.instance?.owner ||
         statusData?.owner;
       
       if (ownerJid) {
         // Clean phone number (remove @s.whatsapp.net if present)
         phoneNumber = String(ownerJid).split('@')[0];
-        console.log('Phone number found:', phoneNumber);
+        console.log('Phone number found (ownerJid/owner):', phoneNumber);
+      } else if (fullInstanceData?.number) {
+        // Some Evolution setups expose a numeric-only field
+        phoneNumber = String(fullInstanceData.number).replace(/\D/g, '');
+        console.log('Phone number found (number field):', phoneNumber);
       } else {
         console.log('Phone number not found in API response');
       }
