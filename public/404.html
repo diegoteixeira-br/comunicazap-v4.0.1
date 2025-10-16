@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecionando...</title>
+    <meta http-equiv="refresh" content="0; url=/" />
+    <meta name="robots" content="noindex" />
+    <script>
+      // Fallback para hospedagens que não suportam reescrita
+      (function(){
+        var target = '/';
+        if (location.pathname && location.pathname !== '/') {
+          // Opcional: você pode preservar o destino via querystring se quiser tratar no app
+          // target += '?redirect=' + encodeURIComponent(location.pathname + location.search + location.hash);
+        }
+        location.replace(target);
+      })();
+    </script>
+  </head>
+  <body>
+    Redirecionando...
+  </body>
+</html>
