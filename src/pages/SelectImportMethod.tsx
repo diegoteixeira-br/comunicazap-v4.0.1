@@ -165,7 +165,7 @@ const SelectImportMethod = () => {
                 </li>
               </ul>
               <Button className="w-full mt-6" variant="outline">
-                Selecionar Arquivo
+                Selecionar Arquivo - Grátis
               </Button>
             </CardContent>
           </Card>
