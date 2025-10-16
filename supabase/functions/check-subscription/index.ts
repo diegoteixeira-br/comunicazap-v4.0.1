@@ -79,16 +79,29 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      
+      // Validar timestamps antes de processar
+      const periodEnd = subscription.current_period_end;
+      const periodStart = subscription.current_period_start;
+      
+      if (!periodEnd || !periodStart) {
+        throw new Error("Subscription missing period timestamps");
+      }
+      
+      subscriptionEnd = new Date(periodEnd * 1000).toISOString();
+      const periodStartISO = new Date(periodStart * 1000).toISOString();
       stripeSubscriptionId = subscription.id;
       stripePriceId = subscription.items.data[0].price.id;
+      
       logStep("Active subscription found", { 
         subscriptionId: subscription.id, 
-        endDate: subscriptionEnd 
+        endDate: subscriptionEnd,
+        periodEnd,
+        periodStart
       });
       
       // Atualizar status no banco de dados
-      await supabaseClient
+      const { error: upsertError } = await supabaseClient
         .from('user_subscriptions')
         .upsert({
           user_id: user.id,
@@ -96,9 +109,16 @@ serve(async (req) => {
           stripe_subscription_id: stripeSubscriptionId,
           stripe_price_id: stripePriceId,
           status: 'active',
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_start: periodStartISO,
           current_period_end: subscriptionEnd,
         }, { onConflict: 'user_id' });
+        
+      if (upsertError) {
+        logStep("Error upserting subscription", { error: upsertError });
+        throw upsertError;
+      }
+      
+      logStep("Subscription updated in database");
     } else {
       logStep("No active subscription found");
       

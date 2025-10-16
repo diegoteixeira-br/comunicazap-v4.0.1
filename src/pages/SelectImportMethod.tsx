@@ -120,14 +120,23 @@ const SelectImportMethod = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
       <div className="container max-w-5xl mx-auto px-4 py-12">
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/dashboard")}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao Dashboard
-          </Button>
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/dashboard")}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar ao Dashboard
+            </Button>
+            <Button
+              variant="outline"
+              onClick={checkSubscription}
+              disabled={checkingSubscription}
+              size="sm"
+            >
+              {checkingSubscription ? "Verificando..." : "Atualizar Status"}
+            </Button>
+          </div>
           <h1 className="text-4xl font-bold mb-4">Nova Campanha</h1>
           <p className="text-muted-foreground text-lg">
             Escolha como você deseja importar seus contatos
