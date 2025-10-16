@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Upload, History, Phone, Power, Loader2, RefreshCw, Unplug } from 'lucide-react';
+import { MessageSquare, Upload, History, Phone, Power, Loader2, RefreshCw, Unplug, CreditCard, Crown } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -28,11 +28,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [openingPortal, setOpeningPortal] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchWhatsAppInstance();
       fetchCampaigns();
+      checkSubscription();
       
       // Subscribe to realtime changes on whatsapp_instances
       const channel = supabase
@@ -143,6 +146,69 @@ const Dashboard = () => {
       });
     } finally {
       setDisconnecting(false);
+    }
+  };
+
+  const checkSubscription = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setHasActiveSubscription(false);
+        return;
+      }
+
+      const { data: subscriptionData } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      setHasActiveSubscription(!!subscriptionData);
+    } catch (error) {
+      console.error('Erro ao verificar assinatura:', error);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setOpeningPortal(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Erro",
+          description: "Você precisa estar logado.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      
+      if (data.url) {
+        window.open(data.url, '_blank');
+        toast({
+          title: "Portal aberto",
+          description: "Gerencie sua assinatura na nova aba.",
+        });
+      }
+    } catch (error) {
+      console.error('Error opening portal:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível abrir o portal de assinaturas.",
+        variant: "destructive",
+      });
+    } finally {
+      setOpeningPortal(false);
     }
   };
 
@@ -279,7 +345,7 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               <Link to="/select-import">
                 <Card className="cursor-pointer hover:shadow-lg transition-shadow">
                   <CardHeader>
@@ -308,6 +374,47 @@ const Dashboard = () => {
                 </Card>
               </Link>
             </div>
+
+            {hasActiveSubscription && (
+              <Card className="border-primary/50 bg-gradient-to-br from-primary/5 to-accent/5">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Crown className="h-5 w-5 text-yellow-500" />
+                        Assinatura Premium Ativa
+                      </CardTitle>
+                      <CardDescription>
+                        Você tem acesso completo à importação de contatos do WhatsApp
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleManageSubscription}
+                    disabled={openingPortal}
+                    className="w-full sm:w-auto"
+                  >
+                    {openingPortal ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Abrindo...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Gerenciar Assinatura
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Aqui você pode cancelar sua assinatura, atualizar forma de pagamento ou visualizar faturas.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </div>
