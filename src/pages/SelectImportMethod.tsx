@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, MessageSquare, ArrowLeft, Crown } from "lucide-react";
 import { ImportContactsModal } from "@/components/ImportContactsModal";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/sessionClient";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 

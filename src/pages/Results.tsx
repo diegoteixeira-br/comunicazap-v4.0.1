@@ -22,7 +22,7 @@ import {
   getCategoryIcon,
   getCategoryLabel
 } from "@/data/messageTemplates";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/sessionClient";
 import { useAuth } from "@/hooks/useAuth";
 
 const Results = () => {
