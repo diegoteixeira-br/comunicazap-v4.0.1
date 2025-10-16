@@ -122,11 +122,20 @@ const Upload = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
       <div className="container max-w-4xl mx-auto px-4 py-12">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-4">Upload de Planilha</h1>
-          <p className="text-muted-foreground text-lg">
-            Envie sua planilha com os dados dos clientes para começar
-          </p>
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="mb-4"
+          >
+            ← Voltar para início
+          </Button>
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">Upload de Planilha</h1>
+            <p className="text-muted-foreground text-lg">
+              Envie sua planilha com os dados dos clientes para começar
+            </p>
+          </div>
         </div>
 
         <Card className="shadow-elevated">
@@ -201,15 +210,6 @@ const Upload = () => {
             </div>
           </CardContent>
         </Card>
-
-        <div className="mt-6 text-center">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-          >
-            Voltar para início
-          </Button>
-        </div>
       </div>
     </div>
   );
