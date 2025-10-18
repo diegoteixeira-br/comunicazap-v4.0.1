@@ -49,18 +49,78 @@ serve(async (req) => {
     if (customers.data.length === 0) {
       logStep("No customer found");
       
-      // Atualizar status no banco de dados
-      await supabaseClient
+      // Verificar se o usuário já existe no banco
+      const { data: existingUser } = await supabaseClient
         .from('user_subscriptions')
-        .upsert({
-          user_id: user.id,
-          status: 'inactive',
-        }, { onConflict: 'user_id' });
+        .select('trial_active, trial_ends_at, created_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
       
-      return new Response(JSON.stringify({ subscribed: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      if (!existingUser) {
+        // Novo usuário - criar trial de 7 dias
+        const trialEndsAt = new Date();
+        trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+        
+        logStep("Creating new trial for user", { trialEndsAt: trialEndsAt.toISOString() });
+        
+        await supabaseClient
+          .from('user_subscriptions')
+          .insert({
+            user_id: user.id,
+            status: 'trial',
+            trial_active: true,
+            trial_ends_at: trialEndsAt.toISOString(),
+          });
+        
+        const trialDaysLeft = 7;
+        
+        return new Response(JSON.stringify({ 
+          subscribed: false,
+          trial_active: true,
+          trial_ends_at: trialEndsAt.toISOString(),
+          trial_days_left: trialDaysLeft,
+          has_access: true,
+          status: 'trial'
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else {
+        // Usuário existente - verificar se trial ainda é válido
+        const trialActive = existingUser.trial_active && 
+                           existingUser.trial_ends_at && 
+                           new Date(existingUser.trial_ends_at) > new Date();
+        
+        const trialDaysLeft = trialActive 
+          ? Math.ceil((new Date(existingUser.trial_ends_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+        
+        logStep("Existing user without Stripe customer", { 
+          trialActive, 
+          trialDaysLeft,
+          trialEndsAt: existingUser.trial_ends_at 
+        });
+        
+        // Atualizar status
+        await supabaseClient
+          .from('user_subscriptions')
+          .update({
+            status: trialActive ? 'trial' : 'inactive',
+          })
+          .eq('user_id', user.id);
+        
+        return new Response(JSON.stringify({ 
+          subscribed: false,
+          trial_active: trialActive,
+          trial_ends_at: existingUser.trial_ends_at,
+          trial_days_left: trialDaysLeft,
+          has_access: trialActive,
+          status: trialActive ? 'trial' : 'inactive'
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
     }
 
     const customerId = customers.data[0].id;
