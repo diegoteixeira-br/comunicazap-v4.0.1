@@ -55,6 +55,8 @@ const Results = () => {
   const [selectedClients, setSelectedClients] = useState<Set<number>>(new Set());
   const [showBestPractices, setShowBestPractices] = useState(false);
   const [agreedToBestPractices, setAgreedToBestPractices] = useState(false);
+  const [blockedContacts, setBlockedContacts] = useState<Set<string>>(new Set());
+  const [loadingBlocked, setLoadingBlocked] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
@@ -147,6 +149,56 @@ const Results = () => {
     const hasAgreed = localStorage.getItem("agreedToBestPractices");
     setAgreedToBestPractices(hasAgreed === "true");
   }, []);
+
+  // Carregar contatos bloqueados
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchBlockedContacts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('blocked_contacts')
+          .select('phone_number')
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        if (data) {
+          const blockedSet = new Set(data.map(contact => contact.phone_number));
+          setBlockedContacts(blockedSet);
+          console.log('📵 Contatos bloqueados carregados:', blockedSet.size);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar contatos bloqueados:', error);
+      } finally {
+        setLoadingBlocked(false);
+      }
+    };
+
+    fetchBlockedContacts();
+
+    // Inscrever para atualizações em tempo real
+    const channel = supabase
+      .channel('blocked-contacts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'blocked_contacts',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('📵 Contato bloqueado atualizado (realtime):', payload);
+          fetchBlockedContacts(); // Recarregar lista
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   // Polling e Realtime monitoring da campanha ativa
   useEffect(() => {
@@ -427,19 +479,37 @@ const Results = () => {
       return;
     }
 
+    // Filtrar contatos bloqueados
+    const availableClients = clients.filter(client => {
+      const phone = client["Telefone do Cliente"];
+      return !blockedContacts.has(phone);
+    });
+
+    if (availableClients.length === 0) {
+      toast.error("Nenhum contato disponível", {
+        description: "Todos os contatos estão bloqueados"
+      });
+      return;
+    }
+
+    const blockedCount = clients.length - availableClients.length;
+    if (blockedCount > 0) {
+      toast.warning(`${blockedCount} contato(s) bloqueado(s) será(ão) ignorado(s)`);
+    }
+
     const campaignName = `Envio em massa - ${new Date().toLocaleString('pt-BR')}`;
 
     setIsSending(true);
-    setCampaignProgress({ sent: 0, failed: 0, total: clients.length });
+    setCampaignProgress({ sent: 0, failed: 0, total: availableClients.length });
     setMessageLogs([]);
     setSendingStatus({}); // Resetar status
 
     toast.info("Iniciando envio...", {
-      description: "Processando todos os clientes"
+      description: `Enviando para ${availableClients.length} contato(s)`
     });
 
     try {
-      const clientsData = clients.map(client => ({
+      const clientsData = availableClients.map(client => ({
         "Nome do Cliente": client["Nome do Cliente"],
         "Telefone do Cliente": client["Telefone do Cliente"]
       }));
@@ -590,10 +660,16 @@ const Results = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedClients.size === clients.length) {
+    // Não selecionar contatos bloqueados
+    const availableIndexes = clients
+      .map((client, index) => ({ client, index }))
+      .filter(({ client }) => !blockedContacts.has(client["Telefone do Cliente"]))
+      .map(({ index }) => index);
+
+    if (selectedClients.size === availableIndexes.length && availableIndexes.length > 0) {
       setSelectedClients(new Set());
     } else {
-      setSelectedClients(new Set(clients.map((_, index) => index)));
+      setSelectedClients(new Set(availableIndexes));
     }
   };
 
@@ -647,6 +723,8 @@ const Results = () => {
 
   const successCount = Object.values(sendingStatus).filter(s => s === "success").length;
   const errorCount = Object.values(sendingStatus).filter(s => s === "error").length;
+  const availableClientsCount = clients.filter(c => !blockedContacts.has(c["Telefone do Cliente"])).length;
+  const blockedClientsCount = clients.length - availableClientsCount;
 
   if (authLoading || loadingInstance) {
     return (
@@ -791,9 +869,19 @@ const Results = () => {
           </Button>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">Nova Campanha</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              {clients.length} cliente(s) carregado(s)
-            </p>
+            <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base text-muted-foreground">
+              <span>{clients.length} cliente(s) carregado(s)</span>
+              {!loadingBlocked && blockedClientsCount > 0 && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <span className="text-destructive font-semibold">{blockedClientsCount} bloqueado(s)</span>
+                  </span>
+                  <span>•</span>
+                  <span className="text-success font-semibold">{availableClientsCount} disponível(is)</span>
+                </>
+              )}
+            </div>
           </div>
           
           {whatsappInstance && (
@@ -1191,11 +1279,14 @@ const Results = () => {
             {/* Client List */}
             <Card className="shadow-elevated">
               <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <CardTitle className="text-base sm:text-lg">Lista de Clientes</CardTitle>
                     <CardDescription className="text-xs sm:text-sm">
-                      Marque as checkboxes para excluir
+                      {blockedClientsCount > 0 
+                        ? `Marque para excluir • ${availableClientsCount} disponíveis, ${blockedClientsCount} bloqueados`
+                        : "Marque as checkboxes para excluir"
+                      }
                     </CardDescription>
                   </div>
                   {selectedClients.size > 0 && (
@@ -1218,7 +1309,7 @@ const Results = () => {
                       <TableRow>
                         <TableHead className="w-[40px] sm:w-[50px]">
                           <Checkbox
-                            checked={selectedClients.size === clients.length && clients.length > 0}
+                            checked={selectedClients.size > 0 && selectedClients.size === availableClientsCount}
                             onCheckedChange={handleSelectAll}
                           />
                         </TableHead>
@@ -1226,33 +1317,55 @@ const Results = () => {
                         <TableHead className="min-w-[120px]">Nome</TableHead>
                         <TableHead className="min-w-[100px]">Telefone</TableHead>
                         <TableHead className="w-[80px] sm:w-[100px]">Status</TableHead>
+                        <TableHead className="w-[100px] sm:w-[120px]">Bloqueio</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {clients.map((client, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedClients.has(index)}
-                              onCheckedChange={() => handleSelectClient(index)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium text-xs sm:text-sm">{index + 1}</TableCell>
-                          <TableCell className="font-medium text-xs sm:text-sm">
-                            <div className="max-w-[150px] sm:max-w-none truncate">
-                              {client["Nome do Cliente"]}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-xs sm:text-sm">
-                            <div className="max-w-[100px] sm:max-w-none truncate">
-                              {client["Telefone do Cliente"]}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(sendingStatus[client["Telefone do Cliente"]] || "idle")}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {clients.map((client, index) => {
+                        const isBlocked = blockedContacts.has(client["Telefone do Cliente"]);
+                        return (
+                          <TableRow key={index} className={isBlocked ? "opacity-50 bg-destructive/5" : ""}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedClients.has(index)}
+                                onCheckedChange={() => handleSelectClient(index)}
+                                disabled={isBlocked}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium text-xs sm:text-sm">{index + 1}</TableCell>
+                            <TableCell className="font-medium text-xs sm:text-sm">
+                              <div className="max-w-[150px] sm:max-w-none truncate">
+                                {client["Nome do Cliente"]}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs sm:text-sm">
+                              <div className="max-w-[100px] sm:max-w-none truncate">
+                                {client["Telefone do Cliente"]}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {isBlocked ? (
+                                <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                                  N/A
+                                </Badge>
+                              ) : (
+                                getStatusBadge(sendingStatus[client["Telefone do Cliente"]] || "idle")
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isBlocked ? (
+                                <Badge variant="destructive" className="gap-1">
+                                  🚫 Bloqueado
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                                  ✅ Disponível
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -1267,9 +1380,9 @@ const Results = () => {
                   >
                     <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     <span className="text-sm sm:text-base">
-                      {selectedClients.size > 0 && selectedClients.size < clients.length
-                        ? `Enviar (${clients.length - selectedClients.size})`
-                        : `Enviar para Todos (${clients.length})`
+                      {selectedClients.size > 0
+                        ? `Enviar (${availableClientsCount - selectedClients.size})`
+                        : `Enviar para Todos (${availableClientsCount})`
                       }
                     </span>
                   </Button>

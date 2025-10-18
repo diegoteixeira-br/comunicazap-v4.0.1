@@ -39,7 +39,7 @@ https://pxzvpnshhulrsjbeqqhn.supabase.co/functions/v1/process-opt-out
 
 ### 3. Palavras que Acionam o Opt-Out
 
-O sistema reconhece as seguintes palavras (case-insensitive):
+O sistema reconhece as seguintes palavras (case-insensitive) **mesmo dentro de frases ou com emojis**:
 - não
 - nao
 - sair
@@ -47,6 +47,12 @@ O sistema reconhece as seguintes palavras (case-insensitive):
 - cancelar
 - stop
 - remover
+
+**✅ Detecção Inteligente**: O sistema agora funciona mesmo se a palavra estiver em uma frase completa. Exemplos que funcionam:
+- "❌ NÃO"
+- "não quero mais"
+- "PARAR por favor"
+- "quero CANCELAR"
 
 ## Fluxo Completo
 
@@ -58,6 +64,17 @@ O sistema reconhece as seguintes palavras (case-insensitive):
 6. **Importante:** Nas próximas campanhas, o sistema automaticamente pula contatos bloqueados
 
 ## Verificação no Sistema
+
+### 👁️ Visualização na Interface (Tela de Nova Campanha)
+
+Após fazer opt-out, você verá o status dos contatos diretamente na interface:
+
+- **📊 Contador no topo**: Mostra "X disponíveis, Y bloqueados"
+- **🔴 Coluna "Bloqueio"**: Badge vermelho "🚫 Bloqueado" para contatos na blocklist
+- **🟢 Badge verde** "✅ Disponível" para contatos que podem receber mensagens
+- **Checkboxes desabilitados** para contatos bloqueados (não podem ser selecionados)
+- **Filtro automático**: Contatos bloqueados são excluídos ao enviar campanhas
+- **⚡ Atualização em tempo real**: Quando alguém faz opt-out, a lista atualiza instantaneamente
 
 ### Como saber se está funcionando:
 

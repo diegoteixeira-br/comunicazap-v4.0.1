@@ -41,7 +41,14 @@ serve(async (req) => {
     const optOutKeywords = ['não', 'nao', 'sair', 'parar', 'cancelar', 'stop', 'remover'];
     const messageText = message.toLowerCase().trim();
     
-    const isOptOut = optOutKeywords.some(keyword => messageText === keyword);
+    // Usar .includes() para detectar palavras em mensagens mais longas (ex: "❌ NÃO")
+    const isOptOut = optOutKeywords.some(keyword => messageText.includes(keyword));
+    
+    console.log('Verificando opt-out:', { 
+      messageText, 
+      isOptOut,
+      matchedKeyword: optOutKeywords.find(k => messageText.includes(k)) 
+    });
 
     if (isOptOut) {
       console.log('Opt-out detected, adding to blocked list');
