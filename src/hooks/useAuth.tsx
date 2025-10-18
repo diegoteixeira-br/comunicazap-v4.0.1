@@ -26,7 +26,16 @@ export const useAuth = () => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        // Se não houver sessão no servidor, limpe localmente
+        await supabase.auth.signOut({ scope: 'local' as any });
+      }
+    } catch {
+      // Força limpar sessão local em qualquer erro
+      await supabase.auth.signOut({ scope: 'local' as any });
+    }
   };
 
   return { user, session, loading, signOut };
