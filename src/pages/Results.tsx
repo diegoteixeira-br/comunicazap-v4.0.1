@@ -1350,7 +1350,7 @@ const Results = () => {
                 </div>
               </CardHeader>
               <CardContent className="px-2 sm:px-6">
-                <div className="rounded-md border max-h-[600px] overflow-y-auto overflow-x-auto">
+                <div className="rounded-md border max-h-[600px] overflow-y-auto">
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
@@ -1360,11 +1360,11 @@ const Results = () => {
                             onCheckedChange={handleSelectAll}
                           />
                         </TableHead>
-                        <TableHead className="w-[40px] sm:w-[50px]">#</TableHead>
-                        <TableHead className="min-w-[120px]">Nome</TableHead>
-                        <TableHead className="min-w-[100px]">Telefone</TableHead>
-                        <TableHead className="w-[80px] sm:w-[100px]">Status</TableHead>
-                        <TableHead className="w-[100px] sm:w-[120px]">Bloqueio</TableHead>
+                        <TableHead className="w-[35px] sm:w-[45px]">#</TableHead>
+                        <TableHead className="min-w-[100px]">Nome</TableHead>
+                        <TableHead className="min-w-[90px]">Telefone</TableHead>
+                        <TableHead className="w-[70px] sm:w-[85px]">Status</TableHead>
+                        <TableHead className="w-[75px] sm:w-[95px]">Bloqueio</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1379,7 +1379,7 @@ const Results = () => {
                                 disabled={isBlocked}
                               />
                             </TableCell>
-                            <TableCell className="font-medium text-xs sm:text-sm">{index + 1}</TableCell>
+                            <TableCell className="font-medium text-xs">{index + 1}</TableCell>
                             <TableCell className="font-medium text-xs sm:text-sm">
                               <div className="max-w-[150px] sm:max-w-none truncate">
                                 {client["Nome do Cliente"]}
@@ -1392,7 +1392,7 @@ const Results = () => {
                             </TableCell>
                             <TableCell>
                               {isBlocked ? (
-                                <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                                <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-muted text-muted-foreground">
                                   N/A
                                 </Badge>
                               ) : (
@@ -1401,12 +1401,12 @@ const Results = () => {
                             </TableCell>
                             <TableCell>
                               {isBlocked ? (
-                                <Badge variant="destructive" className="gap-1">
-                                  🚫 Bloqueado
+                                <Badge variant="destructive" className="text-[10px] sm:text-xs px-1.5 py-0.5 gap-0.5 whitespace-nowrap">
+                                  🚫 Não
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                                  ✅ Disponível
+                                <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 py-0.5 gap-0.5 bg-success/10 text-success border-success/20 whitespace-nowrap">
+                                  ✅ Sim
                                 </Badge>
                               )}
                             </TableCell>
