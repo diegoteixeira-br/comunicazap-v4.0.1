@@ -660,7 +660,7 @@ const Results = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 overflow-x-hidden">
       {/* Best Practices Alert Dialog */}
       <AlertDialog open={showBestPractices} onOpenChange={setShowBestPractices}>
         <AlertDialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -769,7 +769,7 @@ const Results = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="container max-w-7xl mx-auto px-4 py-4 sm:py-8">
+      <div className="container max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="mb-4 sm:mb-6">
           <Button
             variant="ghost"
@@ -1044,22 +1044,24 @@ const Results = () => {
                 </Card>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={() => setShowSaveDialog(true)}
                     variant="outline"
+                    className="w-full sm:w-auto justify-center"
                     disabled={!messageVariations[activeVariationTab].trim()}
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    Salvar como Template
+                    <span className="whitespace-nowrap">Salvar Template</span>
                   </Button>
                   <Button
                     onClick={handleClearMessage}
                     variant="outline"
+                    className="w-full sm:w-auto justify-center"
                     disabled={!messageVariations[activeVariationTab].trim()}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Limpar Variação
+                    <span className="whitespace-nowrap">Limpar</span>
                   </Button>
                 </div>
 
@@ -1189,11 +1191,11 @@ const Results = () => {
             {/* Client List */}
             <Card className="shadow-elevated">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <CardTitle className="text-lg">Lista de Clientes</CardTitle>
-                    <CardDescription>
-                      Marque as checkboxes para excluir clientes indesejados
+                    <CardTitle className="text-base sm:text-lg">Lista de Clientes</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      Marque as checkboxes para excluir
                     </CardDescription>
                   </div>
                   {selectedClients.size > 0 && (
@@ -1201,7 +1203,7 @@ const Results = () => {
                       variant="destructive"
                       size="sm"
                       onClick={handleDeleteSelected}
-                      className="gap-2"
+                      className="gap-2 w-full sm:w-auto"
                     >
                       <Trash2 className="h-4 w-4" />
                       Excluir ({selectedClients.size})
@@ -1209,21 +1211,21 @@ const Results = () => {
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="rounded-md border max-h-[600px] overflow-y-auto">
+              <CardContent className="px-2 sm:px-6">
+                <div className="rounded-md border max-h-[600px] overflow-y-auto overflow-x-auto">
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead className="w-[50px]">
+                        <TableHead className="w-[40px] sm:w-[50px]">
                           <Checkbox
                             checked={selectedClients.size === clients.length && clients.length > 0}
                             onCheckedChange={handleSelectAll}
                           />
                         </TableHead>
-                        <TableHead className="w-[50px]">#</TableHead>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Telefone</TableHead>
-                        <TableHead className="w-[100px]">Status</TableHead>
+                        <TableHead className="w-[40px] sm:w-[50px]">#</TableHead>
+                        <TableHead className="min-w-[120px]">Nome</TableHead>
+                        <TableHead className="min-w-[100px]">Telefone</TableHead>
+                        <TableHead className="w-[80px] sm:w-[100px]">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1235,11 +1237,17 @@ const Results = () => {
                               onCheckedChange={() => handleSelectClient(index)}
                             />
                           </TableCell>
-                          <TableCell className="font-medium">{index + 1}</TableCell>
-                          <TableCell className="font-medium">
-                            {client["Nome do Cliente"]}
+                          <TableCell className="font-medium text-xs sm:text-sm">{index + 1}</TableCell>
+                          <TableCell className="font-medium text-xs sm:text-sm">
+                            <div className="max-w-[150px] sm:max-w-none truncate">
+                              {client["Nome do Cliente"]}
+                            </div>
                           </TableCell>
-                          <TableCell className="text-sm">{client["Telefone do Cliente"]}</TableCell>
+                          <TableCell className="text-xs sm:text-sm">
+                            <div className="max-w-[100px] sm:max-w-none truncate">
+                              {client["Telefone do Cliente"]}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             {getStatusBadge(sendingStatus[client["Telefone do Cliente"]] || "idle")}
                           </TableCell>
