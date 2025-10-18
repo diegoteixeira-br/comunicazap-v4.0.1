@@ -174,7 +174,7 @@ const Index = () => {
             Importação profissional de contatos do WhatsApp com <span className="text-primary font-semibold">7 dias de teste grátis</span>
           </p>
           <div className="max-w-2xl mx-auto">
-            <Card className="border-2 border-primary/50 relative overflow-hidden shadow-2xl bg-gradient-to-br from-primary/5 to-accent/5">
+            <Card className="border-2 border-primary/50 relative shadow-2xl bg-gradient-to-br from-primary/5 to-accent/5">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                 <div className="bg-gradient-to-r from-primary to-accent text-white px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg">
                   <Clock className="h-4 w-4" />
@@ -225,9 +225,9 @@ const Index = () => {
                     <span className="text-sm"><strong>Suporte prioritário</strong> via WhatsApp</span>
                   </li>
                 </ul>
-                <Button onClick={() => navigate("/auth")} size="lg" className="w-full text-base sm:text-lg py-4 sm:py-6 px-4 sm:px-6 h-auto whitespace-normal break-words bg-gradient-to-r from-primary to-accent hover:opacity-90">
-                  <Crown className="h-5 w-5 mr-2" />
-                  Começar Teste Grátis de 7 Dias
+                <Button onClick={() => navigate("/auth")} size="lg" className="w-full text-sm sm:text-lg py-3 sm:py-6 px-4 sm:px-6 h-auto bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                  <Crown className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  <span className="leading-tight">Começar Teste Grátis de 7 Dias</span>
                 </Button>
               </CardContent>
             </Card>
@@ -341,9 +341,9 @@ const Index = () => {
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Crie sua conta e teste <span className="text-primary font-bold">GRÁTIS por 7 dias</span> nossa plataforma completa de disparo via WhatsApp.
           </p>
-          <Button onClick={() => navigate("/auth")} size="lg" variant="hero" className="w-full sm:w-auto text-base sm:text-lg px-4 sm:px-10 py-4 sm:py-6 h-auto whitespace-normal break-words bg-gradient-to-r from-primary to-accent">
-            <Clock className="h-5 w-5 mr-2" />
-            Começar Teste Grátis de 7 Dias
+          <Button onClick={() => navigate("/auth")} size="lg" variant="hero" className="w-full sm:w-auto text-sm sm:text-lg px-6 sm:px-10 py-3 sm:py-6 h-auto bg-gradient-to-r from-primary to-accent">
+            <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+            <span className="leading-tight">Começar Teste Grátis de 7 Dias</span>
           </Button>
         </div>
       </div>
