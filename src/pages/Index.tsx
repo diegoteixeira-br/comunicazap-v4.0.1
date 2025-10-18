@@ -196,10 +196,15 @@ const Index = () => {
         {/* Pricing Section */}
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-4">Plano Único e Completo</h2>
-          <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
             Importação profissional de contatos do WhatsApp com <span className="text-primary font-semibold">7 dias de teste grátis</span>
           </p>
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto mt-8">
+            <div className="mb-3">
+              <div className="bg-red-500 text-white px-4 py-2 text-xs sm:text-sm font-bold text-center animate-pulse rounded-t-lg">
+                ⚠️ PROMOÇÃO POR TEMPO LIMITADO - PODE ACABAR A QUALQUER MOMENTO
+              </div>
+            </div>
             <Card className="border-2 border-primary/50 relative shadow-2xl bg-gradient-to-br from-primary/5 to-accent/5">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex gap-3">
                 <div className="bg-gradient-to-r from-primary to-accent text-white px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg">
@@ -208,11 +213,6 @@ const Index = () => {
                 </div>
                 <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
                   30% OFF
-                </div>
-              </div>
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-full">
-                <div className="bg-red-500 text-white px-4 py-1 text-xs font-bold text-center animate-pulse">
-                  ⚠️ PROMOÇÃO POR TEMPO LIMITADO - PODE ACABAR A QUALQUER MOMENTO
                 </div>
               </div>
               <CardHeader className="pb-4 pt-16">
