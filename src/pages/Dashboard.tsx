@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, History, Phone, Power, Loader2, RefreshCw, Unplug, CreditCard, Crown, Clock, Zap, AlertCircle, Send, XCircle } from 'lucide-react';
+import { ImportContactsModal } from '@/components/ImportContactsModal';
 import { toast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -38,6 +39,7 @@ const Dashboard = () => {
   const [disconnecting, setDisconnecting] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -276,7 +278,27 @@ const Dashboard = () => {
       });
       return;
     }
-    navigate('/connect-whatsapp');
+    
+    // Se o WhatsApp não estiver conectado, vai para a página de conexão
+    if (whatsappInstance?.status !== 'connected') {
+      navigate('/connect-whatsapp');
+      return;
+    }
+    
+    // Se já estiver conectado, abre o modal de importação direto
+    setShowImportModal(true);
+  };
+
+  const handleImportContacts = (contacts: { name: string; phone: string }[]) => {
+    // Converte para o formato esperado pela página Results
+    const clientData = contacts.map(contact => ({
+      "Nome do Cliente": contact.name,
+      "Telefone do Cliente": contact.phone
+    }));
+    
+    // Armazena os contatos e navega para /results
+    sessionStorage.setItem("clientData", JSON.stringify(clientData));
+    navigate("/results");
   };
 
   return (
@@ -531,6 +553,13 @@ const Dashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Modal de Importação de Contatos */}
+        <ImportContactsModal
+          open={showImportModal}
+          onOpenChange={setShowImportModal}
+          onImport={handleImportContacts}
+        />
       </div>
     </div>
   );
