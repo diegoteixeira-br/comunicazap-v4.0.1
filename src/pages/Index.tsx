@@ -206,8 +206,13 @@ const Index = () => {
                   <Clock className="h-4 w-4" />
                   7 DIAS GRÁTIS
                 </div>
-                <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
                   30% OFF
+                </div>
+              </div>
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-full">
+                <div className="bg-red-500 text-white px-4 py-1 text-xs font-bold text-center animate-pulse">
+                  ⚠️ PROMOÇÃO POR TEMPO LIMITADO - PODE ACABAR A QUALQUER MOMENTO
                 </div>
               </div>
               <CardHeader className="pb-4 pt-8">
