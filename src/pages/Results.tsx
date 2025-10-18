@@ -29,7 +29,7 @@ const Results = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState<ClientData[]>([]);
-  const [sendingStatus, setSendingStatus] = useState<{ [key: number]: "idle" | "sending" | "success" | "error" }>({});
+  const [sendingStatus, setSendingStatus] = useState<{ [key: string]: "idle" | "sending" | "success" | "error" }>({});
   const [customMessage, setCustomMessage] = useState("");
   const [whatsappInstance, setWhatsappInstance] = useState<any>(null);
   const [loadingInstance, setLoadingInstance] = useState(true);
@@ -139,63 +139,73 @@ const Results = () => {
     setTemplates(getAllTemplates());
   }, []);
 
-  // Realtime monitoring da campanha ativa
+  // Polling e Realtime monitoring da campanha ativa
   useEffect(() => {
     if (!activeCampaignId) return;
 
     console.log('📡 Iniciando monitoramento da campanha:', activeCampaignId);
 
-    // Subscribe para atualizações dos logs
-    const logsChannel = supabase
-      .channel('message-logs-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'message_logs',
-          filter: `campaign_id=eq.${activeCampaignId}`
-        },
-        (payload) => {
-          console.log('📨 Log atualizado:', payload);
-          
-          // Atualizar lista de logs
-          if (payload.eventType === 'INSERT') {
-            setMessageLogs(prev => [...prev, payload.new]);
-          } else if (payload.eventType === 'UPDATE') {
-            setMessageLogs(prev => 
-              prev.map(log => log.id === payload.new.id ? payload.new : log)
-            );
-          }
-        }
-      )
-      .subscribe();
+    let pollingInterval: NodeJS.Timeout;
 
-    // Subscribe para atualizações da campanha
-    const campaignChannel = supabase
-      .channel('campaign-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'message_campaigns',
-          filter: `id=eq.${activeCampaignId}`
-        },
-        (payload) => {
-          console.log('📊 Campanha atualizada:', payload);
-          const campaign = payload.new;
-          
+    // Função para atualizar status dos clientes baseado nos logs
+    const updateClientStatus = (logs: any[]) => {
+      const statusMap: { [key: string]: "idle" | "sending" | "success" | "error" } = {};
+      
+      logs.forEach((log) => {
+        const phone = log.client_phone;
+        if (log.status === 'sent') {
+          statusMap[phone] = 'success';
+        } else if (log.status === 'failed') {
+          statusMap[phone] = 'error';
+        } else if (log.status === 'pending') {
+          statusMap[phone] = 'sending';
+        }
+      });
+
+      setSendingStatus(statusMap);
+    };
+
+    // Função para buscar dados da campanha
+    const fetchCampaignData = async () => {
+      try {
+        // Buscar campanha
+        const { data: campaign } = await supabase
+          .from('message_campaigns')
+          .select('*')
+          .eq('id', activeCampaignId)
+          .single();
+
+        if (campaign) {
+          console.log('📊 Campanha atualizada (polling):', {
+            sent: campaign.sent_count,
+            failed: campaign.failed_count,
+            total: campaign.total_contacts,
+            status: campaign.status
+          });
+
           setCampaignProgress({
             sent: campaign.sent_count || 0,
             failed: campaign.failed_count || 0,
             total: campaign.total_contacts || 0
           });
 
+          // Buscar logs
+          const { data: logs } = await supabase
+            .from('message_logs')
+            .select('*')
+            .eq('campaign_id', activeCampaignId)
+            .order('created_at', { ascending: true });
+
+          if (logs) {
+            setMessageLogs(logs);
+            updateClientStatus(logs);
+          }
+
           // Se campanha completada, liberar navegação
           if (campaign.status === 'completed') {
             console.log('✅ Campanha completada!');
             setIsSending(false);
+            clearInterval(pollingInterval);
             
             toast.success("Envio concluído!", {
               description: `${campaign.sent_count} enviadas, ${campaign.failed_count} falharam`
@@ -207,25 +217,54 @@ const Results = () => {
             }, 3000);
           }
         }
-      )
-      .subscribe();
-
-    // Fetch inicial dos logs
-    const fetchLogs = async () => {
-      const { data } = await supabase
-        .from('message_logs')
-        .select('*')
-        .eq('campaign_id', activeCampaignId)
-        .order('created_at', { ascending: true });
-      
-      if (data) {
-        setMessageLogs(data);
+      } catch (error) {
+        console.error('Erro ao buscar dados da campanha:', error);
       }
     };
 
-    fetchLogs();
+    // Fetch inicial
+    fetchCampaignData();
+
+    // Polling a cada 2 segundos
+    pollingInterval = setInterval(fetchCampaignData, 2000);
+
+    // Subscribe para atualizações em tempo real (backup do polling)
+    const logsChannel = supabase
+      .channel('message-logs-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_logs',
+          filter: `campaign_id=eq.${activeCampaignId}`
+        },
+        (payload) => {
+          console.log('📨 Log atualizado (realtime):', payload);
+          fetchCampaignData(); // Refetch para garantir consistência
+        }
+      )
+      .subscribe();
+
+    const campaignChannel = supabase
+      .channel('campaign-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'message_campaigns',
+          filter: `id=eq.${activeCampaignId}`
+        },
+        (payload) => {
+          console.log('📊 Campanha atualizada (realtime):', payload);
+          fetchCampaignData(); // Refetch para garantir consistência
+        }
+      )
+      .subscribe();
 
     return () => {
+      clearInterval(pollingInterval);
       supabase.removeChannel(logsChannel);
       supabase.removeChannel(campaignChannel);
     };
@@ -293,7 +332,8 @@ const Results = () => {
   };
 
   const handleSend = async (client: ClientData, index: number, campaignId?: string) => {
-    setSendingStatus(prev => ({ ...prev, [index]: "sending" }));
+    const phone = client["Telefone do Cliente"];
+    setSendingStatus(prev => ({ ...prev, [phone]: "sending" }));
 
     try {
       const processedMessage = customMessage ? replaceVariables(customMessage, client) : "";
@@ -302,13 +342,13 @@ const Results = () => {
         toast.error("Conteúdo vazio", {
           description: "Por favor, adicione uma mensagem ou imagem antes de enviar"
         });
-        setSendingStatus(prev => ({ ...prev, [index]: "error" }));
+        setSendingStatus(prev => ({ ...prev, [phone]: "error" }));
         return false;
       }
 
       if (!whatsappInstance) {
         toast.error("WhatsApp não conectado");
-        setSendingStatus(prev => ({ ...prev, [index]: "error" }));
+        setSendingStatus(prev => ({ ...prev, [phone]: "error" }));
         return false;
       }
 
@@ -342,7 +382,7 @@ const Results = () => {
       if (error) throw error;
 
       if (data?.success) {
-        setSendingStatus(prev => ({ ...prev, [index]: "success" }));
+        setSendingStatus(prev => ({ ...prev, [phone]: "success" }));
         toast.success("Mensagem enviada!", {
           description: `Enviado para ${client["Nome do Cliente"]}`
         });
@@ -353,7 +393,7 @@ const Results = () => {
       }
     } catch (error: any) {
       console.error("❌ Erro ao enviar:", error);
-      setSendingStatus(prev => ({ ...prev, [index]: "error" }));
+      setSendingStatus(prev => ({ ...prev, [phone]: "error" }));
       toast.error("Erro ao enviar", {
         description: error.message || `Não foi possível enviar para ${client["Nome do Cliente"]}`
       });
@@ -380,6 +420,7 @@ const Results = () => {
     setIsSending(true);
     setCampaignProgress({ sent: 0, failed: 0, total: clients.length });
     setMessageLogs([]);
+    setSendingStatus({}); // Resetar status
 
     toast.info("Iniciando envio...", {
       description: "Processando todos os clientes"
@@ -551,6 +592,10 @@ const Results = () => {
     }
 
     if (confirm(`Tem certeza que deseja excluir ${selectedClients.size} cliente(s) selecionado(s)?`)) {
+      const deletedPhones = clients
+        .filter((_, index) => selectedClients.has(index))
+        .map(c => c["Telefone do Cliente"]);
+      
       const newClients = clients.filter((_, index) => !selectedClients.has(index));
       setClients(newClients);
       
@@ -560,8 +605,8 @@ const Results = () => {
       // Limpar seleção e status de envio dos clientes excluídos
       setSelectedClients(new Set());
       const newStatus = { ...sendingStatus };
-      selectedClients.forEach(index => {
-        delete newStatus[index];
+      deletedPhones.forEach(phone => {
+        delete newStatus[phone];
       });
       setSendingStatus(newStatus);
       
@@ -1052,31 +1097,32 @@ const Results = () => {
                         {client["Nome do Cliente"]}
                       </TableCell>
                       <TableCell>{client["Telefone do Cliente"]}</TableCell>
-                      <TableCell>
-                        {getStatusBadge(sendingStatus[index] || "idle")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          onClick={() => handleSend(client, index)}
-                          disabled={
-                            sendingStatus[index] === "sending" ||
-                            sendingStatus[index] === "success"
-                          }
-                        >
-                          {sendingStatus[index] === "success" ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Enviado
-                            </>
-                          ) : (
-                            <>
-                              <Send className="h-4 w-4 mr-1" />
-                              Enviar
-                            </>
-                          )}
-                        </Button>
-                      </TableCell>
+                       <TableCell>
+                         {getStatusBadge(sendingStatus[client["Telefone do Cliente"]] || "idle")}
+                       </TableCell>
+                       <TableCell className="text-right">
+                         <Button
+                           size="sm"
+                           onClick={() => handleSend(client, index)}
+                           disabled={
+                             isSending ||
+                             sendingStatus[client["Telefone do Cliente"]] === "sending" ||
+                             sendingStatus[client["Telefone do Cliente"]] === "success"
+                           }
+                         >
+                           {sendingStatus[client["Telefone do Cliente"]] === "success" ? (
+                             <>
+                               <CheckCircle className="h-4 w-4 mr-1" />
+                               Enviado
+                             </>
+                           ) : (
+                             <>
+                               <Send className="h-4 w-4 mr-1" />
+                               Enviar
+                             </>
+                           )}
+                         </Button>
+                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
