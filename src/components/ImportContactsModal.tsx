@@ -235,15 +235,17 @@ export const ImportContactsModal = ({ open, onOpenChange, onImport }: ImportCont
           </>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Cancelar
           </Button>
           <Button 
             onClick={handleImport}
             disabled={selectedContacts.size === 0 || loading}
+            className="w-full sm:w-auto text-xs sm:text-sm"
           >
-            Carregar {selectedContacts.size} Contatos Selecionados
+            <span className="hidden sm:inline">Carregar {selectedContacts.size} Contatos Selecionados</span>
+            <span className="sm:hidden">Carregar {selectedContacts.size} Contatos</span>
           </Button>
         </DialogFooter>
       </DialogContent>

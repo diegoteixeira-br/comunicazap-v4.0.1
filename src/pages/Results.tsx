@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, CheckCircle, AlertCircle, ArrowLeft, Info, ChevronDown, ChevronUp, Save, Trash2, Smartphone, ImagePlus, X, AlertTriangle, RefreshCw } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, ArrowLeft, Info, ChevronDown, ChevronUp, Save, Trash2, Smartphone, ImagePlus, X, AlertTriangle, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ClientData } from "./Upload";
@@ -57,10 +57,17 @@ const Results = () => {
   const [agreedToBestPractices, setAgreedToBestPractices] = useState(false);
   const [blockedContacts, setBlockedContacts] = useState<Set<string>>(new Set());
   const [loadingBlocked, setLoadingBlocked] = useState(true);
+  const [showWhatsAppPhone, setShowWhatsAppPhone] = useState(true);
 
   // Função para normalizar número de telefone (remover sufixo WhatsApp)
   const normalizePhone = (phone: string): string => {
     return phone.replace(/@s\.whatsapp\.net$/, '').replace(/@c\.us$/, '');
+  };
+
+  const maskPhone = (phone: string) => {
+    if (!phone) return '';
+    if (phone.length <= 6) return '***' + phone.slice(-3);
+    return phone.substring(0, 3) + '***' + phone.slice(-4);
   };
 
   useEffect(() => {
@@ -925,14 +932,27 @@ const Results = () => {
           {whatsappInstance && (
             <Card className="mt-4 bg-primary/5 border-primary/20">
               <CardContent className="py-3">
-                <div className="flex items-center gap-3">
-                  <Smartphone className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium">WhatsApp Conectado</p>
-                    <p className="text-sm text-muted-foreground">
-                      {whatsappInstance.phone_number || 'Número não disponível'}
-                    </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Smartphone className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">WhatsApp Conectado</p>
+                      <p className="text-sm text-muted-foreground">
+                        {showWhatsAppPhone 
+                          ? (whatsappInstance.phone_number || 'Número não disponível')
+                          : maskPhone(whatsappInstance.phone_number || '')
+                        }
+                      </p>
+                    </div>
                   </div>
+                  {whatsappInstance.phone_number && (
+                    <button
+                      onClick={() => setShowWhatsAppPhone(!showWhatsAppPhone)}
+                      className="text-muted-foreground hover:text-foreground transition-colors p-2"
+                    >
+                      {showWhatsAppPhone ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </button>
+                  )}
                 </div>
               </CardContent>
             </Card>
