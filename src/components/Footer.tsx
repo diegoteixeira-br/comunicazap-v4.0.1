@@ -36,10 +36,10 @@ export const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Informações</h3>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>
-                <strong>Razão Social:</strong> [Razão Social]
+                <strong>Razão Social:</strong> 63.266.334 DIEGO TEIXEIRA DA SILVA
               </p>
               <p>
-                <strong>CNPJ:</strong> [00.000.000/0000-00]
+                <strong>CNPJ:</strong> 63.266.334/0001-21
               </p>
               <p>
                 <strong>Endereço:</strong> Rua F. V de Azevedo, 07 Bairro: Cohab Nova Cidade: Cáceres-MT
