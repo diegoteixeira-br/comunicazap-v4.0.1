@@ -53,7 +53,7 @@ export const Footer = () => {
               </a>
               <a href="tel:[telefone]" className="flex items-center gap-2 hover:text-primary transition-colors">
                 <Phone className="h-4 w-4" />
-                65993025105
+                (65)99302-5105
               </a>
             </div>
           </div>
