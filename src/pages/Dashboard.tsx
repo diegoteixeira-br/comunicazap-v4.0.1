@@ -345,23 +345,7 @@ const Dashboard = () => {
   };
 
   const handleNewCampaign = () => {
-    if (subscriptionStatus && !subscriptionStatus.has_access) {
-      toast({
-        title: "Acesso restrito",
-        description: "Assine para continuar usando a importação do WhatsApp.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Se o WhatsApp não estiver conectado, vai para a página de conexão
-    if (whatsappInstance?.status !== 'connected') {
-      navigate('/connect-whatsapp');
-      return;
-    }
-    
-    // Se já estiver conectado, abre o modal de importação direto
-    setShowImportModal(true);
+    navigate('/select-import-method');
   };
 
   const handleImportContacts = (contacts: { name: string; phone: string }[]) => {
