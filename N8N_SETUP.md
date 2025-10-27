@@ -2,8 +2,9 @@
 
 ## Formato do Payload Enviado pelo Sistema
 
-O sistema envia o seguinte JSON para o webhook do n8n:
+O sistema pode enviar dois tipos de payloads:
 
+### Apenas Texto:
 ```json
 {
   "instanceName": "user-82af4c91-1760496491812",
@@ -13,32 +14,46 @@ O sistema envia o seguinte JSON para o webhook do n8n:
 }
 ```
 
-**IMPORTANTE:** O sistema agora suporta variações de mensagem! Cada contato pode receber uma variação diferente. O campo `text` já vem personalizado com o nome do cliente e a variação selecionada automaticamente pelo sistema (round-robin).
+### Com Imagem:
+```json
+{
+  "instanceName": "user-82af4c91-1760496491812",
+  "api_key": "EDA20E00-0647-4F30-B239-0D9B5C7FC193",
+  "number": "556599999999",
+  "mediaType": "image",
+  "media": "iVBORw0KGgoAAAANSUhEUgAA...", 
+  "caption": "Olá João, sua mensagem aqui"
+}
+```
 
-## Configuração do HTTP Request no n8n
+**IMPORTANTE:** 
+- O campo `text` vem personalizado com o nome do cliente
+- Quando há imagem, o campo `media` contém apenas o base64 puro (sem prefixo data:image)
+- Use variações de mensagem para evitar banimento
 
-### 1. Método
-- **POST**
+## Configuração do n8n com IF para Texto ou Mídia
 
-### 2. URL
+### Passo 1: Adicionar nó IF após o Webhook
+
+Configure o nó IF para detectar se há mídia:
+
+- **Condition**: `{{ $json.body.mediaType }}` **is not empty**
+
+### Passo 2: HTTP Request para TEXTO (rota FALSE do IF)
+
+Quando NÃO há mídia (rota **false** do IF):
+
+#### URL:
 ```
 http://evolution:8080/message/sendText/{{ $json.body.instanceName }}
 ```
 
-### 3. Authentication
-- **None** (usaremos header customizado)
-
-### 4. Headers
-Adicione o seguinte header:
-
+#### Headers:
 | Name | Value |
 |------|-------|
 | apikey | `{{ $json.body.api_key }}` |
 
-### 5. Body (JSON)
-
-**IMPORTANTE: O formato correto para a Evolution API é:**
-
+#### Body (JSON):
 ```json
 {
   "number": "{{ $json.body.number }}",
@@ -46,13 +61,32 @@ Adicione o seguinte header:
 }
 ```
 
-**OU se a Evolution API exigir o formato com textMessage:**
+### Passo 3: HTTP Request para MÍDIA (rota TRUE do IF)
 
+Quando há mídia (rota **true** do IF):
+
+#### URL:
+```
+http://evolution:8080/message/sendMedia/{{ $json.body.instanceName }}
+```
+
+#### Headers:
+| Name | Value |
+|------|-------|
+| apikey | `{{ $json.body.api_key }}` |
+
+#### Body (JSON):
 ```json
 {
   "number": "{{ $json.body.number }}",
-  "textMessage": {
-    "text": "{{ $json.body.text }}"
+  "mediaMessage": {
+    "mediatype": "image",
+    "media": "{{ $json.body.media }}",
+    "caption": "{{ $json.body.caption }}"
+  },
+  "options": {
+    "presence": "composing",
+    "delay": 1200
   }
 }
 ```
