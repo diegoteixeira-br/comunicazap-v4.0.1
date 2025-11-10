@@ -119,49 +119,53 @@ const BirthdayCalendar = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
-      <div className="container max-w-7xl mx-auto px-4 py-6">
+      <div className="container max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate("/contacts")}
-            className="mb-4"
+            className="mb-3 sm:mb-4"
+            size="sm"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar aos Contatos
+            <span className="hidden sm:inline">Voltar aos Contatos</span>
+            <span className="sm:hidden">Voltar</span>
           </Button>
           
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                <Cake className="h-8 w-8 text-primary" />
+              <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-2">
+                <Cake className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                 Calendário de Aniversários
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Visualize todos os aniversários dos seus contatos
               </p>
             </div>
-            <Button onClick={goToToday} variant="outline">
+            <Button onClick={goToToday} variant="outline" size="sm">
               <CalendarIcon className="mr-2 h-4 w-4" />
-              Ir para Hoje
+              <span className="hidden sm:inline">Ir para Hoje</span>
+              <span className="sm:hidden">Hoje</span>
             </Button>
           </div>
         </div>
 
         {/* Month Stats */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+              <div className="flex items-center gap-2 sm:gap-4">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={previousMonth}
+                  className="h-8 w-8 sm:h-10 sm:w-10"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <div className="text-center min-w-[200px]">
-                  <h2 className="text-2xl font-bold">
+                <div className="text-center min-w-[160px] sm:min-w-[200px]">
+                  <h2 className="text-lg sm:text-2xl font-bold capitalize">
                     {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
                   </h2>
                 </div>
@@ -169,14 +173,15 @@ const BirthdayCalendar = () => {
                   variant="outline"
                   size="icon"
                   onClick={nextMonth}
+                  className="h-8 w-8 sm:h-10 sm:w-10"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
               
-              <Badge variant="secondary" className="text-lg px-4 py-2">
-                <Cake className="mr-2 h-5 w-5" />
-                {totalBirthdaysThisMonth} aniversário(s) neste mês
+              <Badge variant="secondary" className="text-xs sm:text-lg px-2 py-1 sm:px-4 sm:py-2">
+                <Cake className="mr-1 sm:mr-2 h-3 w-3 sm:h-5 sm:w-5" />
+                {totalBirthdaysThisMonth} aniversário(s)
               </Badge>
             </div>
           </CardContent>
@@ -191,19 +196,19 @@ const BirthdayCalendar = () => {
           </Card>
         ) : (
           <Card>
-            <CardHeader>
-              <CardTitle>Calendário Mensal</CardTitle>
-              <CardDescription>
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Calendário Mensal</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 Clique em um dia para ver os aniversariantes
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-2">
+            <CardContent className="px-2 sm:px-6">
+              <div className="grid grid-cols-7 gap-1 sm:gap-2">
                 {/* Week day headers */}
                 {weekDays.map((day) => (
                   <div
                     key={day}
-                    className="text-center font-semibold text-sm p-2 text-muted-foreground"
+                    className="text-center font-semibold text-[10px] sm:text-sm p-1 sm:p-2 text-muted-foreground"
                   >
                     {day}
                   </div>
@@ -224,19 +229,19 @@ const BirthdayCalendar = () => {
                     <div
                       key={day.toISOString()}
                       className={`
-                        min-h-[120px] p-2 border rounded-lg transition-all
+                        min-h-[70px] sm:min-h-[100px] p-1 sm:p-2 border rounded transition-all
                         ${isToday ? 'border-primary border-2 bg-primary/5' : 'border-border'}
                         ${hasBirthdays ? 'bg-secondary/30 hover:bg-secondary/50' : 'hover:bg-accent'}
                         cursor-pointer relative
                       `}
                     >
                       <div className="flex justify-between items-start mb-1">
-                        <span className={`text-sm font-medium ${isToday ? 'text-primary font-bold' : ''}`}>
+                        <span className={`text-[10px] sm:text-sm font-medium ${isToday ? 'text-primary font-bold' : ''}`}>
                           {format(day, 'd')}
                         </span>
                         {hasBirthdays && (
-                          <Badge variant="default" className="text-xs h-5">
-                            <Cake className="h-3 w-3 mr-1" />
+                          <Badge variant="default" className="text-[8px] sm:text-xs h-4 sm:h-5 px-1 sm:px-2">
+                            <Cake className="h-2 w-2 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                             {birthdaysToday.length}
                           </Badge>
                         )}
@@ -244,18 +249,18 @@ const BirthdayCalendar = () => {
                       
                       {hasBirthdays && (
                         <>
-                          <div className="space-y-1 mt-2 mb-2">
+                          <div className="space-y-0.5 sm:space-y-1 mt-1 sm:mt-2 mb-1 sm:mb-2 hidden sm:block">
                             {birthdaysToday.slice(0, 2).map((contact) => (
                               <div
                                 key={contact.id}
-                                className="text-xs p-1 bg-background/50 rounded truncate"
+                                className="text-[10px] sm:text-xs p-0.5 sm:p-1 bg-background/50 rounded truncate"
                                 title={contact.name || contact.phone_number}
                               >
                                 🎂 {contact.name || contact.phone_number.slice(-4)}
                               </div>
                             ))}
                             {birthdaysToday.length > 2 && (
-                              <div className="text-xs text-muted-foreground text-center">
+                              <div className="text-[10px] sm:text-xs text-muted-foreground text-center">
                                 +{birthdaysToday.length - 2} mais
                               </div>
                             )}
@@ -263,11 +268,11 @@ const BirthdayCalendar = () => {
                           <Button
                             size="sm"
                             variant="default"
-                            className="w-full text-xs h-7"
+                            className="w-full text-[8px] sm:text-xs h-5 sm:h-7 px-1 sm:px-2"
                             onClick={() => handleImportBirthdays(day)}
                           >
-                            <Upload className="h-3 w-3 mr-1" />
-                            Importar
+                            <Upload className="h-2 w-2 sm:h-3 sm:w-3 sm:mr-1" />
+                            <span className="hidden sm:inline">Importar</span>
                           </Button>
                         </>
                       )}
