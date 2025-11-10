@@ -28,7 +28,9 @@ import {
   UserCheck,
   X,
   Download,
-  Cake
+  Cake,
+  Upload as UploadIcon,
+  FileSpreadsheet
 } from "lucide-react";
 import { ImportContactsModal } from "@/components/ImportContactsModal";
 import { format, isSameDay } from "date-fns";
@@ -39,6 +41,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import * as XLSX from "xlsx";
+import Papa from "papaparse";
 
 interface Contact {
   id: string;
@@ -67,7 +71,9 @@ const Contacts = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBulkTagDialog, setShowBulkTagDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   
   const [newContact, setNewContact] = useState({ phone: "", name: "", tags: "", birthday: "" });
   const [editTags, setEditTags] = useState("");
@@ -384,6 +390,134 @@ const Contacts = () => {
     }
   };
 
+  const processSpreadsheetFile = async (file: File) => {
+    setIsProcessingFile(true);
+
+    try {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+
+      if (!fileExtension || !['xlsx', 'xls', 'csv'].includes(fileExtension)) {
+        toast({
+          title: "Formato inválido",
+          description: "Por favor, envie apenas arquivos .xlsx, .xls ou .csv",
+          variant: "destructive"
+        });
+        setIsProcessingFile(false);
+        return;
+      }
+
+      let rows: any[] = [];
+
+      if (fileExtension === 'csv') {
+        const text = await file.text();
+        Papa.parse(text, {
+          header: true,
+          complete: (results) => {
+            rows = results.data;
+            importContactsFromSpreadsheet(rows);
+          },
+          error: () => {
+            toast({
+              title: "Erro",
+              description: "Erro ao processar CSV",
+              variant: "destructive"
+            });
+            setIsProcessingFile(false);
+          }
+        });
+      } else {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        rows = XLSX.utils.sheet_to_json(worksheet);
+        importContactsFromSpreadsheet(rows);
+      }
+    } catch (error) {
+      console.error("Erro ao processar arquivo:", error);
+      toast({
+        title: "Erro",
+        description: "Verifique se o arquivo está no formato correto",
+        variant: "destructive"
+      });
+      setIsProcessingFile(false);
+    }
+  };
+
+  const importContactsFromSpreadsheet = async (rows: any[]) => {
+    if (!rows || rows.length === 0) {
+      toast({
+        title: "Planilha vazia",
+        description: "A planilha não contém dados válidos",
+        variant: "destructive"
+      });
+      setIsProcessingFile(false);
+      return;
+    }
+
+    try {
+      let imported = 0;
+      let skipped = 0;
+
+      for (const row of rows) {
+        // Aceitar diferentes formatos de coluna
+        const name = row["Nome do Cliente"] || row["Nome"] || row["name"] || "";
+        const phone = row["Telefone do Cliente"] || row["Telefone"] || row["phone"] || "";
+        const birthday = row["Aniversário"] || row["Data de Nascimento"] || row["birthday"] || null;
+        const tagsStr = row["Tags"] || row["tags"] || "";
+
+        if (!name || !phone) {
+          skipped++;
+          continue;
+        }
+
+        const tags = tagsStr ? tagsStr.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0) : [];
+
+        const { error } = await supabase
+          .from('contacts')
+          .insert({
+            user_id: user?.id,
+            phone_number: phone.toString().trim(),
+            name: name.toString().trim(),
+            tags,
+            birthday: birthday || null,
+            status: 'active'
+          });
+
+        if (error) {
+          console.error('Error inserting contact:', error);
+          skipped++;
+        } else {
+          imported++;
+        }
+      }
+
+      toast({
+        title: "Importação concluída!",
+        description: `${imported} contato(s) importado(s)${skipped > 0 ? `, ${skipped} ignorado(s)` : ''}`,
+      });
+
+      setShowUploadDialog(false);
+      fetchContacts();
+    } catch (error: any) {
+      console.error('Error importing contacts:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível importar os contatos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingFile(false);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processSpreadsheetFile(file);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
       <div className="container max-w-7xl mx-auto px-4 py-6">
@@ -409,6 +543,10 @@ const Contacts = () => {
               <Button variant="outline" onClick={() => navigate("/birthday-calendar")}>
                 <Cake className="mr-2 h-4 w-4" />
                 Calendário
+              </Button>
+              <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Planilha
               </Button>
               <Button variant="outline" onClick={() => setShowImportDialog(true)}>
                 <Download className="mr-2 h-4 w-4" />
@@ -726,6 +864,69 @@ const Contacts = () => {
                 Cancelar
               </Button>
               <Button onClick={handleBulkAddTags}>Adicionar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Upload Spreadsheet Dialog */}
+        <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
+                Upload de Planilha
+              </DialogTitle>
+              <DialogDescription>
+                Importe contatos através de uma planilha Excel (.xlsx, .xls) ou CSV
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                <input
+                  type="file"
+                  id="spreadsheet-input"
+                  className="hidden"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFileInput}
+                  disabled={isProcessingFile}
+                />
+                <UploadIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-base font-medium mb-2">
+                  {isProcessingFile ? "Processando..." : "Selecione sua planilha"}
+                </p>
+                <Button
+                  variant="outline"
+                  disabled={isProcessingFile}
+                  onClick={() => document.getElementById('spreadsheet-input')?.click()}
+                  className="mt-2"
+                >
+                  Escolher Arquivo
+                </Button>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                <h4 className="font-medium text-sm">Formato da planilha:</h4>
+                <p className="text-sm text-muted-foreground">
+                  Sua planilha deve conter as seguintes colunas:
+                </p>
+                <div className="bg-background p-3 rounded font-mono text-xs space-y-1">
+                  <div>• <span className="text-primary">Nome do Cliente</span> ou <span className="text-primary">Nome</span> (obrigatório)</div>
+                  <div>• <span className="text-primary">Telefone do Cliente</span> ou <span className="text-primary">Telefone</span> (obrigatório)</div>
+                  <div>• <span className="text-muted-foreground">Aniversário</span> ou <span className="text-muted-foreground">Data de Nascimento</span> (opcional)</div>
+                  <div>• <span className="text-muted-foreground">Tags</span> (opcional, separadas por vírgula)</div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowUploadDialog(false)}
+                disabled={isProcessingFile}
+              >
+                Cancelar
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
