@@ -26,8 +26,12 @@ import {
   Edit, 
   UserX,
   UserCheck,
-  X
+  X,
+  Download,
+  Cake
 } from "lucide-react";
+import { ImportContactsModal } from "@/components/ImportContactsModal";
+import { format, isSameDay } from "date-fns";
 import {
   Select,
   SelectContent,
@@ -43,6 +47,7 @@ interface Contact {
   tags: string[];
   status: string;
   created_at: string;
+  birthday: string | null;
 }
 
 const Contacts = () => {
@@ -61,9 +66,10 @@ const Contacts = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showBulkTagDialog, setShowBulkTagDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   
-  const [newContact, setNewContact] = useState({ phone: "", name: "", tags: "" });
+  const [newContact, setNewContact] = useState({ phone: "", name: "", tags: "", birthday: "" });
   const [editTags, setEditTags] = useState("");
   const [bulkTags, setBulkTags] = useState("");
   
@@ -126,7 +132,15 @@ const Contacts = () => {
       filtered = filtered.filter(c => c.status === statusFilter);
     }
 
-    if (tagFilter && tagFilter !== "all") {
+    if (tagFilter === "birthday_today") {
+      const today = new Date();
+      filtered = filtered.filter(c => {
+        if (!c.birthday) return false;
+        const birthday = new Date(c.birthday);
+        return birthday.getMonth() === today.getMonth() && 
+               birthday.getDate() === today.getDate();
+      });
+    } else if (tagFilter && tagFilter !== "all") {
       filtered = filtered.filter(c => c.tags?.includes(tagFilter));
     }
 
@@ -156,6 +170,7 @@ const Contacts = () => {
           phone_number: newContact.phone,
           name: newContact.name || null,
           tags: tags,
+          birthday: newContact.birthday || null,
           status: 'active'
         });
 
@@ -167,7 +182,7 @@ const Contacts = () => {
       });
 
       setShowAddDialog(false);
-      setNewContact({ phone: "", name: "", tags: "" });
+      setNewContact({ phone: "", name: "", tags: "", birthday: "" });
       fetchContacts();
     } catch (error: any) {
       console.error('Error adding contact:', error);
@@ -176,6 +191,41 @@ const Contacts = () => {
         description: error.message.includes('duplicate') 
           ? "Este contato já existe" 
           : "Não foi possível adicionar o contato",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleImportContacts = async (importedContacts: { name: string; phone: string }[]) => {
+    try {
+      const contactsToInsert = importedContacts.map(c => ({
+        user_id: user?.id,
+        phone_number: c.phone,
+        name: c.name || null,
+        tags: [],
+        status: 'active'
+      }));
+
+      const { error } = await supabase
+        .from('contacts')
+        .upsert(contactsToInsert, { 
+          onConflict: 'user_id,phone_number',
+          ignoreDuplicates: true 
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: `${importedContacts.length} contatos importados com sucesso`
+      });
+
+      fetchContacts();
+    } catch (error: any) {
+      console.error('Error importing contacts:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível importar os contatos",
         variant: "destructive"
       });
     }
@@ -352,10 +402,16 @@ const Contacts = () => {
                 Gerencie seus contatos e organize por tags
               </p>
             </div>
-            <Button onClick={() => setShowAddDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Contato
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                <Download className="mr-2 h-4 w-4" />
+                Importar do WhatsApp
+              </Button>
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Contato
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -390,6 +446,12 @@ const Contacts = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as tags</SelectItem>
+                  <SelectItem value="birthday_today">
+                    <div className="flex items-center gap-2">
+                      <Cake className="h-4 w-4" />
+                      Aniversariantes do Dia
+                    </div>
+                  </SelectItem>
                   {allTags.map(tag => (
                     <SelectItem key={tag} value={tag}>{tag}</SelectItem>
                   ))}
@@ -482,16 +544,20 @@ const Contacts = () => {
                             {contact.phone_number}
                           </p>
                         )}
-                        {contact.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {contact.tags.map((tag, idx) => (
-                              <Badge key={idx} variant="outline">
-                                <TagIcon className="h-3 w-3 mr-1" />
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {contact.birthday && (
+                            <Badge variant="secondary" className="gap-1">
+                              <Cake className="h-3 w-3" />
+                              {format(new Date(contact.birthday), "dd/MM")}
+                            </Badge>
+                          )}
+                          {contact.tags.map((tag, idx) => (
+                            <Badge key={idx} variant="outline">
+                              <TagIcon className="h-3 w-3 mr-1" />
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
@@ -548,6 +614,15 @@ const Contacts = () => {
                   placeholder="Nome do contato"
                   value={newContact.name}
                   onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="birthday">Data de Aniversário</Label>
+                <Input
+                  id="birthday"
+                  type="date"
+                  value={newContact.birthday}
+                  onChange={(e) => setNewContact({ ...newContact, birthday: e.target.value })}
                 />
               </div>
               <div>
@@ -638,6 +713,13 @@ const Contacts = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Import Contacts Modal */}
+        <ImportContactsModal
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          onImport={handleImportContacts}
+        />
       </div>
     </div>
   );

@@ -40,6 +40,7 @@ export type Database = {
       }
       contacts: {
         Row: {
+          birthday: string | null
           created_at: string
           id: string
           name: string | null
@@ -50,6 +51,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          birthday?: string | null
           created_at?: string
           id?: string
           name?: string | null
@@ -60,6 +62,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          birthday?: string | null
           created_at?: string
           id?: string
           name?: string | null
