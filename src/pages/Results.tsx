@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, CheckCircle, AlertCircle, ArrowLeft, Info, ChevronDown, ChevronUp, Save, Trash2, Smartphone, ImagePlus, X, AlertTriangle, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { Send, CheckCircle, AlertCircle, ArrowLeft, Info, ChevronDown, ChevronUp, Save, Trash2, Smartphone, ImagePlus, X, AlertTriangle, RefreshCw, Eye, EyeOff, Lock } from "lucide-react";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ClientData } from "./Upload";
@@ -25,10 +25,13 @@ import {
 } from "@/data/messageTemplates";
 import { supabase } from "@/integrations/supabase/sessionClient";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Results = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const subscription = useSubscription();
   const [clients, setClients] = useState<ClientData[]>([]);
   const [sendingStatus, setSendingStatus] = useState<{ [key: string]: "idle" | "sending" | "success" | "error" }>({});
   const [customMessage, setCustomMessage] = useState("");
@@ -1467,20 +1470,54 @@ const Results = () => {
 
                 {/* Send Button at Bottom */}
                 <div className="mt-4 sm:mt-6">
-                  <Button
-                    onClick={handleSendAll}
-                    size="lg"
-                    className="w-full"
-                    disabled={isSending || Object.values(sendingStatus).some(s => s === "sending")}
-                  >
-                    <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                    <span className="text-sm sm:text-base">
-                      {selectedClients.size > 0
-                        ? `Enviar (${availableClientsCount - selectedClients.size})`
-                        : `Enviar para Todos (${availableClientsCount})`
-                      }
-                    </span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="w-full">
+                        <Button
+                          onClick={() => {
+                            if (!subscription.has_access) {
+                              toast.error("Acesso bloqueado", {
+                                description: "Assine ou aguarde seu período de teste para enviar mensagens."
+                              });
+                              return;
+                            }
+                            handleSendAll();
+                          }}
+                          size="lg"
+                          className="w-full"
+                          disabled={!subscription.has_access || isSending || Object.values(sendingStatus).some(s => s === "sending")}
+                        >
+                          {!subscription.has_access ? (
+                            <>
+                              <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                              <span className="text-sm sm:text-base">Bloqueado - Assinatura Necessária</span>
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                              <span className="text-sm sm:text-base">
+                                {selectedClients.size > 0
+                                  ? `Enviar (${availableClientsCount - selectedClients.size})`
+                                  : `Enviar para Todos (${availableClientsCount})`
+                                }
+                              </span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {!subscription.has_access && (
+                      <TooltipContent>
+                        <p>Você precisa de uma assinatura ativa para enviar mensagens.</p>
+                        <p className="text-xs mt-1">
+                          {subscription.trial_active 
+                            ? `Teste grátis: ${subscription.trial_days_left} dias restantes`
+                            : "Seu período de teste expirou. Assine para continuar."
+                          }
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
                 </div>
               </CardContent>
             </Card>

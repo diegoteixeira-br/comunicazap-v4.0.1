@@ -36,7 +36,7 @@ const App = () => (
           <Route path="/connect-whatsapp" element={<ProtectedRoute><ConnectWhatsApp /></ProtectedRoute>} />
           <Route path="/select-import-method" element={<ProtectedRoute><SubscriptionGate><SelectImportMethod /></SubscriptionGate></ProtectedRoute>} />
           <Route path="/upload" element={<ProtectedRoute><SubscriptionGate><Upload /></SubscriptionGate></ProtectedRoute>} />
-          <Route path="/results" element={<ProtectedRoute><SubscriptionGate><Results /></SubscriptionGate></ProtectedRoute>} />
+          <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
           <Route path="/contacts" element={<ProtectedRoute><Contacts /></ProtectedRoute>} />
           <Route path="/birthday-calendar" element={<ProtectedRoute><BirthdayCalendar /></ProtectedRoute>} />
