@@ -63,9 +63,10 @@ export const SubscriptionGate = ({ children }: SubscriptionGateProps) => {
       }
     } catch (error) {
       console.error('Error opening checkout:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
-        title: "Erro",
-        description: "Não foi possível abrir o checkout.",
+        title: "Erro ao Abrir Checkout",
+        description: `Não foi possível iniciar o checkout. ${errorMessage.includes('api_key') ? 'Problema com configuração do Stripe.' : 'Tente novamente em alguns instantes.'}`,
         variant: "destructive",
       });
     } finally {

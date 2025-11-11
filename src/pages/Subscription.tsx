@@ -56,7 +56,8 @@ const Subscription = () => {
       }
     } catch (error) {
       console.error('Erro ao abrir portal:', error);
-      toast.error("Erro ao abrir portal de gerenciamento. Tente novamente.");
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao abrir portal: ${errorMessage.includes('No Stripe customer') ? 'Você ainda não possui assinatura ativa.' : 'Tente novamente em alguns instantes.'}`);
     } finally {
       setLoading(false);
     }
@@ -86,7 +87,8 @@ const Subscription = () => {
       }
     } catch (error) {
       console.error('Erro ao criar checkout:', error);
-      toast.error("Erro ao criar sessão de checkout. Tente novamente.");
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error(`Erro ao criar checkout: ${errorMessage.includes('api_key') ? 'Problema com configuração do Stripe.' : errorMessage.includes('price') ? 'Produto não encontrado.' : 'Tente novamente.'}`);
     } finally {
       setLoading(false);
     }
