@@ -203,7 +203,7 @@ export const SupportChat = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-96 h-[600px] shadow-2xl flex flex-col z-50 overflow-hidden">
+        <Card className="fixed bottom-4 right-4 left-4 md:left-auto md:right-6 md:w-96 h-[600px] max-h-[calc(100vh-2rem)] shadow-2xl flex flex-col z-50 overflow-hidden">
           {/* Header */}
           <div className="bg-primary text-primary-foreground p-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
