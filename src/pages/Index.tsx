@@ -470,7 +470,7 @@ const Index = () => {
                     Delay Inteligente
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Intervalo de 4 a 5 minutos entre mensagens para envios mais rápidos
+                    Intervalo de 2 a 3 minutos entre mensagens para envios mais rápidos
                   </p>
                 </div>
                 <div>
