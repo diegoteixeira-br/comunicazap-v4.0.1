@@ -318,7 +318,7 @@ const Index = () => {
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                     <span className="text-sm">
-                      <strong>Envio inteligente</strong> com delay aleatório (4-5 min) para evitar bloqueios
+                      <strong>Envio inteligente</strong> com delay aleatório (2-3 min) para evitar bloqueios
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
