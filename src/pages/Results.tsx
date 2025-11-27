@@ -35,7 +35,8 @@ const Results = () => {
   const [clients, setClients] = useState<ClientData[]>([]);
   const [sendingStatus, setSendingStatus] = useState<{ [key: string]: "idle" | "sending" | "success" | "error" }>({});
   const [customMessage, setCustomMessage] = useState("");
-  const [messageVariations, setMessageVariations] = useState<string[]>(["", "", ""]);
+  const [variationCount, setVariationCount] = useState(3);
+  const [messageVariations, setMessageVariations] = useState<string[]>(() => Array(3).fill(""));
   const [activeVariationTab, setActiveVariationTab] = useState(0);
   const [whatsappInstance, setWhatsappInstance] = useState<any>(null);
   const [loadingInstance, setLoadingInstance] = useState(true);
@@ -78,6 +79,39 @@ const Results = () => {
     if (!phone) return '';
     if (phone.length <= 6) return '***' + phone.slice(-3);
     return phone.substring(0, 3) + '***' + phone.slice(-4);
+  };
+
+  // Calcular quantidade sugerida de variações baseada no número de contatos
+  const getSuggestedVariationCount = (contactCount: number): number => {
+    if (contactCount <= 10) return 3;
+    if (contactCount <= 50) return 5;
+    if (contactCount <= 100) return 7;
+    if (contactCount <= 250) return 10;
+    if (contactCount <= 500) return 12;
+    return 15; // 500+ contatos
+  };
+
+  // Função para alterar quantidade de variações
+  const handleVariationCountChange = (newCount: number) => {
+    setVariationCount(newCount);
+    
+    // Ajustar array de variações
+    const newVariations = [...messageVariations];
+    if (newCount > messageVariations.length) {
+      // Adicionar novos slots vazios
+      while (newVariations.length < newCount) {
+        newVariations.push("");
+      }
+    } else {
+      // Remover slots excedentes
+      newVariations.length = newCount;
+    }
+    setMessageVariations(newVariations);
+    
+    // Se a tab ativa for maior que o novo count, voltar para última tab
+    if (activeVariationTab >= newCount) {
+      setActiveVariationTab(newCount - 1);
+    }
   };
 
   // Filtrar contatos pela busca
@@ -895,7 +929,10 @@ const Results = () => {
       });
 
       const { data, error } = await supabase.functions.invoke('generate-variations', {
-        body: { originalMessage: firstVariation }
+        body: { 
+          originalMessage: firstVariation,
+          count: variationCount
+        }
       });
 
       if (error) {
@@ -904,13 +941,17 @@ const Results = () => {
 
       if (data?.success && data.variations) {
         const newVariations = [...messageVariations];
-        // data.variations[0] é a original, [1] e [2] são as novas
-        if (data.variations[1]) newVariations[1] = data.variations[1];
-        if (data.variations[2]) newVariations[2] = data.variations[2];
+        
+        // Preencher todas as variações retornadas (data.variations[0] é a original)
+        data.variations.forEach((variation: string, index: number) => {
+          if (index > 0 && index < variationCount) {
+            newVariations[index] = variation;
+          }
+        });
         
         setMessageVariations(newVariations);
         
-        toast.success("Variações geradas com sucesso! ✨", {
+        toast.success(`${variationCount - 1} variações geradas com sucesso! ✨`, {
           description: "Você pode editar as variações geradas se desejar"
         });
       } else {
@@ -1228,7 +1269,7 @@ const Results = () => {
                       Mensagem Personalizada com Variações
                     </CardTitle>
                     <CardDescription>
-                      Crie até 3 variações de mensagem para parecer mais humano
+                      Crie até {variationCount} variações de mensagem para parecer mais humano
                     </CardDescription>
                   </div>
                   <Tooltip>
@@ -1278,29 +1319,53 @@ const Results = () => {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Seletor de Quantidade de Variações */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm whitespace-nowrap">Variações:</Label>
+                    <Select 
+                      value={variationCount.toString()} 
+                      onValueChange={(v) => handleVariationCountChange(Number(v))}
+                      disabled={isSending}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[3, 5, 7, 10, 12, 15].map(num => (
+                          <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Badge variant="outline" className="text-xs">
+                    Sugerido: {getSuggestedVariationCount(clients.length)} (para {clients.length} contatos)
+                  </Badge>
+                </div>
+
                 {/* Abas de Variações */}
                 <Tabs value={activeVariationTab.toString()} onValueChange={(v) => setActiveVariationTab(Number(v))}>
-                  <TabsList className="w-full grid grid-cols-3">
-                    <TabsTrigger value="0">
-                      Variação 1
-                      {messageVariations[0].trim() && " ✓"}
-                    </TabsTrigger>
-                    <TabsTrigger value="1">
-                      Variação 2
-                      {messageVariations[1].trim() && " ✓"}
-                    </TabsTrigger>
-                    <TabsTrigger value="2">
-                      Variação 3
-                      {messageVariations[2].trim() && " ✓"}
-                    </TabsTrigger>
-                  </TabsList>
+                  <div className="overflow-x-auto pb-2">
+                    <TabsList 
+                      className="grid w-full"
+                      style={{ gridTemplateColumns: `repeat(${variationCount}, minmax(0, 1fr))` }}
+                    >
+                      {Array.from({ length: variationCount }, (_, index) => (
+                        <TabsTrigger key={index} value={index.toString()} className="text-xs sm:text-sm">
+                          {index + 1}
+                          {messageVariations[index]?.trim() && " ✓"}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
 
-                  {[0, 1, 2].map((index) => (
+                  {Array.from({ length: variationCount }, (_, index) => (
                     <TabsContent key={index} value={index.toString()} className="mt-4">
                       <div>
                         <Textarea
                           placeholder={`Olá {nome}, tudo bem? 😊 (Variação ${index + 1})`}
-                          value={messageVariations[index]}
+                          value={messageVariations[index] || ""}
                           onChange={(e) => {
                             const newVariations = [...messageVariations];
                             newVariations[index] = e.target.value.slice(0, 1000);
@@ -1315,7 +1380,7 @@ const Results = () => {
                             {index === 0 && "Obrigatória"} {index > 0 && "Opcional"}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {messageVariations[index].length}/1000
+                            {messageVariations[index]?.length || 0}/1000
                           </span>
                         </div>
                       </div>

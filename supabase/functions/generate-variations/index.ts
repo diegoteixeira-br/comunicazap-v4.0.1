@@ -25,11 +25,15 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { originalMessage } = await req.json();
+    const { originalMessage, count = 3 } = await req.json();
 
     if (!originalMessage || !originalMessage.trim()) {
       throw new Error('Original message is required');
     }
+
+    // Validar count (mínimo 3, máximo 15)
+    const variationCount = Math.min(15, Math.max(3, count));
+    const toGenerate = variationCount - 1; // Menos a original
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -38,16 +42,17 @@ serve(async (req) => {
 
     console.log('Generating variations with Lovable AI for user:', user.id);
 
-    // Prompt otimizado para gerar variações
-    const systemPrompt = `Você é um especialista em copywriting para WhatsApp. Sua tarefa é criar 2 variações de mensagens que mantenham:
+    // Prompt otimizado para gerar N variações
+    const systemPrompt = `Você é um especialista em copywriting para WhatsApp. Sua tarefa é criar ${toGenerate} variações de mensagens que mantenham:
 - O mesmo significado e propósito da mensagem original
 - O mesmo tom (formal/informal/vendas/amigável)
 - Placeholders como {nome} devem ser preservados exatamente
 - Tamanho similar à mensagem original
 - Emojis apenas se a original tiver (mantenha o estilo)
 - Linguagem natural e brasileira
+- CADA variação deve ser sutilmente diferente (palavras, ordem das frases, expressões)
 
-IMPORTANTE: Retorne APENAS as 2 variações, uma por linha, sem numeração ou prefixos.`;
+IMPORTANTE: Retorne APENAS as ${toGenerate} variações, uma por linha, sem numeração ou prefixos.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -59,7 +64,7 @@ IMPORTANTE: Retorne APENAS as 2 variações, uma por linha, sem numeração ou p
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Mensagem original:\n\n${originalMessage}\n\nCrie 2 variações diferentes desta mensagem.` }
+          { role: 'user', content: `Mensagem original:\n\n${originalMessage}\n\nCrie ${toGenerate} variações diferentes desta mensagem.` }
         ],
         temperature: 0.8,
       }),
@@ -89,19 +94,19 @@ IMPORTANTE: Retorne APENAS as 2 variações, uma por linha, sem numeração ou p
       .split('\n')
       .map((line: string) => line.trim())
       .filter((line: string) => line.length > 0)
-      .slice(0, 2); // Garantir apenas 2 variações
+      .slice(0, toGenerate); // Garantir apenas toGenerate variações
 
-    // Se não conseguiu gerar 2 variações, criar uma baseada na original
-    while (variations.length < 2) {
+    // Se não conseguiu gerar todas, preencher com a original
+    while (variations.length < toGenerate) {
       variations.push(originalMessage);
     }
 
-    console.log('Generated variations:', variations.length);
+    console.log('Generated variations:', variations.length, 'Requested:', variationCount);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        variations: [originalMessage, ...variations] // Original + 2 variações
+        variations: [originalMessage, ...variations] // Original + N-1 variações
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
