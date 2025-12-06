@@ -98,7 +98,7 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Lato',
+  				'Montserrat',
   				'ui-sans-serif',
   				'system-ui',
   				'-apple-system',
@@ -111,7 +111,7 @@ export default {
   				'sans-serif'
   			],
   			serif: [
-  				'EB Garamond',
+  				'Cormorant Garamond',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
@@ -120,7 +120,7 @@ export default {
   				'serif'
   			],
   			mono: [
-  				'Fira Code',
+  				'IBM Plex Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
