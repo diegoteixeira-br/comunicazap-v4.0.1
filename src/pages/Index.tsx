@@ -155,7 +155,8 @@ const Index = () => {
               Disparo em Massa via WhatsApp
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Conecte seu WhatsApp, importe seus contatos diretamente e envie mensagens personalizadas automaticamente.
+              Transforme seu WhatsApp em uma Máquina de Vendas. Importe contatos, gerencie aniversariantes e faça
+              disparos em massa sem risco de bloqueio.
               <span className="text-primary font-semibold">Comece com 7 dias de teste grátis!</span>
             </p>
           </div>
