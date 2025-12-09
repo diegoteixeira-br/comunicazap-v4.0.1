@@ -383,7 +383,7 @@ const Index = () => {
                     <li className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                       <span className="text-sm">
-                        <strong>Calendário de aniversários</strong> com lembretes
+                        <strong>Radar de Aniversariantes</strong> com importação rápida
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
