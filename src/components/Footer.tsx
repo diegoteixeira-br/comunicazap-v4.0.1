@@ -66,7 +66,13 @@ export const Footer = () => {
                 <Mail className="h-4 w-4" />
                 contato@dtsolucoesdigital.com.br
               </a>
-              <a href="tel:[telefone]" className="flex items-center gap-2 hover:text-primary transition-colors">
+              <a
+                href="https://wa.me/5565993025105"
+                target="_blank" // Adiciona target="_blank" para abrir em uma nova aba
+                rel="noopener noreferrer" // Recomendado para links target="_blank"
+                className="flex items-center gap-2 hover:text-primary transition-colors"
+              >
+                {/* Você pode trocar o ícone de telefone (Phone) por um ícone do WhatsApp */}
                 <Phone className="h-4 w-4" />
                 (65) 99302-5105
               </a>
